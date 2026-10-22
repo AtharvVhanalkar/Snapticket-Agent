@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 from typing import Optional
 
-# Automatically load .env file into os.environ
 env_path = Path(__file__).resolve().parent / ".env"
 if env_path.exists():
     with open(env_path, "r", encoding="utf-8") as f:
@@ -16,7 +15,6 @@ if env_path.exists():
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.log_sensor import MacOSLogSensor
@@ -39,7 +37,6 @@ sensor = MacOSLogSensor()
 engine = GemmaEngine()
 
 ui_dir = Path(__file__).resolve().parent / "ui"
-app.mount("/static", StaticFiles(directory=str(ui_dir)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_index():
@@ -53,15 +50,18 @@ def detect_telemetry():
     return {"detected": bool(incident), "incident": incident}
 
 @app.post("/api/analyze")
-async def analyze_report(
+def analyze_report(
     image: Optional[UploadFile] = File(None),
     use_telemetry: bool = Form(True),
     app_name: str = Form(""),
     app_type: str = Form("3rd_party")
 ):
     img_bytes = None
-    if image and hasattr(image, "read"):
-        img_bytes = await image.read()
+    if image:
+        try:
+            img_bytes = image.file.read()
+        except Exception:
+            img_bytes = None
 
     telemetry_data = sensor.fetch_latest_incident() if use_telemetry else None
     telemetry_text = telemetry_data.get("telemetry", "") if telemetry_data else ""
@@ -80,9 +80,9 @@ async def analyze_report(
         parsed_json = {
             "title": f"[{app_name or 'Application'}] Runtime Exception Detected",
             "actual_behavior": str(raw_response),
-            "reproduction_steps": ["Launch target application", "Trigger crash or render event"],
-            "expected_behavior": "Expected continuous stable execution",
-            "technical_diagnostics": telemetry_text[:300] if telemetry_text else "UI glitch visually identified.",
+            "reproduction_steps": ["1. Launch application", "2. Trigger failure condition"],
+            "expected_behavior": "Normal runtime execution",
+            "technical_diagnostics": telemetry_text[:300] if telemetry_text else "Visual anomaly identified.",
             "suggested_portal_url": fallback_url
         }
 
@@ -113,4 +113,4 @@ def dispatch_issue(
         return copilot.autofill_form(title, body)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
