@@ -3,10 +3,21 @@ import json
 from pathlib import Path
 from typing import Optional
 
+# Automatically load .env file into os.environ
+env_path = Path(__file__).resolve().parent / ".env"
+if env_path.exists():
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                os.environ[key.strip()] = val.strip().strip('"').strip("'")
+
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from core.log_sensor import MacOSLogSensor
 from core.gemma_engine import GemmaEngine
@@ -15,6 +26,15 @@ from dispatchers.github_client import GitHubDispatcher
 from dispatchers.browser_copilot import BrowserCopilot
 
 app = FastAPI(title="SnapTicket Agent API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 sensor = MacOSLogSensor()
 engine = GemmaEngine()
 
@@ -35,22 +55,35 @@ def detect_telemetry():
 @app.post("/api/analyze")
 async def analyze_report(
     image: Optional[UploadFile] = File(None),
-    use_telemetry: bool = Form(True)
+    use_telemetry: bool = Form(True),
+    app_name: str = Form(""),
+    app_type: str = Form("3rd_party")
 ):
-    img_bytes = await image.read() if image else None
+    img_bytes = None
+    if image and hasattr(image, "read"):
+        img_bytes = await image.read()
+
     telemetry_data = sensor.fetch_latest_incident() if use_telemetry else None
     telemetry_text = telemetry_data.get("telemetry", "") if telemetry_data else ""
 
-    raw_response = engine.synthesize_report(img_bytes, telemetry_text)
+    raw_response = engine.synthesize_report(
+        image_bytes=img_bytes,
+        telemetry_text=telemetry_text,
+        app_name=app_name,
+        app_type=app_type
+    )
+
     try:
         parsed_json = json.loads(raw_response) if isinstance(raw_response, str) else raw_response
     except Exception:
+        fallback_url = "https://feedbackassistant.apple.com" if app_type == "native_mac" else f"https://github.com/{os.getenv('GITHUB_DEFAULT_REPO', 'AtharvVhanalkar/snapticket-agent')}/issues"
         parsed_json = {
-            "title": "Application Exception Detected",
-            "actual_behavior": raw_response,
-            "reproduction_steps": ["Trigger application crash event"],
-            "expected_behavior": "Expected stable execution",
-            "technical_diagnostics": "Telemetry trace captured from host logs."
+            "title": f"[{app_name or 'Application'}] Runtime Exception Detected",
+            "actual_behavior": str(raw_response),
+            "reproduction_steps": ["Launch target application", "Trigger crash or render event"],
+            "expected_behavior": "Expected continuous stable execution",
+            "technical_diagnostics": telemetry_text[:300] if telemetry_text else "UI glitch visually identified.",
+            "suggested_portal_url": fallback_url
         }
 
     markdown_report = ReportBuilder.build_markdown(
@@ -58,6 +91,7 @@ async def analyze_report(
         include_telemetry=use_telemetry,
         telemetry_text=telemetry_text
     )
+
     return {
         "structured": parsed_json,
         "markdown": markdown_report,
@@ -73,12 +107,10 @@ def dispatch_issue(
 ):
     if channel == "github":
         dispatcher = GitHubDispatcher()
-        res = dispatcher.create_issue(target, title, body)
-        return res
+        return dispatcher.create_issue(target, title, body)
     else:
         copilot = BrowserCopilot(target)
-        res = copilot.autofill_form(title, body)
-        return res
+        return copilot.autofill_form(title, body)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -2,121 +2,272 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SnapTicket Agent — Autonomous Triage</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapTicket Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      padding: 32px 16px;
+    }
+    .wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h1 { font-size: 26px; font-weight: 700; color: #0f172a; }
+    .tagline { font-size: 13px; color: #64748b; margin-top: 2px; }
+    .status-pill {
+      font-size: 12px;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #15803d;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid #bbf7d0;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+    .box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .label-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      display: block;
+      margin-bottom: 4px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: 2px solid #4f46e5;
+      background: #ffffff;
+    }
+    textarea {
+      font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+      resize: vertical;
+      min-height: 140px;
+    }
+    .radio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .radio-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #f8fafc;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    /* Clickable Upload Dropzone Box */
+    .dropzone-container {
+      position: relative;
+      border: 2px dashed #6366f1;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: #f8fafc;
+      margin-bottom: 16px;
+      transition: background 0.2s;
+    }
+    .dropzone-container:hover {
+      background: #eef2ff;
+    }
+    .file-input-control {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #334155;
+      cursor: pointer;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #ffffff;
+    }
+    .btn-purple { background: #4f46e5; }
+    .btn-purple:hover { background: #4338ca; }
+    .btn-dark { background: #0f172a; margin-top: 10px; }
+    .btn-dark:hover { background: #1e293b; }
+    .hidden { display: none !important; }
+    #image-preview {
+      max-height: 140px;
+      margin: 12px auto 0;
+      display: block;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
-  <div class="max-w-5xl mx-auto py-10 px-6">
-    
-    <!-- Header -->
-    <header class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200">
+<body>
+  <div class="wrapper">
+    <header>
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900">SnapTicket Agent</h1>
-        <p class="text-sm text-slate-500">Autonomous Bug & Incident Triage Engine</p>
+        <h1>SnapTicket Agent</h1>
+        <p class="tagline">Autonomous Incident Triage & Dispatch Engine</p>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <i class="fa-solid fa-microchip"></i> Gemma 4 Active
-        </span>
+      <div>
+        <span class="status-pill">● Gemma 4 Active</span>
       </div>
     </header>
 
-    <!-- Main Workspace Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      
-      <!-- Left Panel: Ingestion & Consent -->
-      <section class="space-y-6">
-        
-        <!-- Telemetry Detection Card -->
-        <div id="telemetry-card" class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div id="telemetry-icon" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">macOS Telemetry</p>
-              <p id="telemetry-status" class="text-sm font-medium text-slate-700">Checking for recent .ips incident logs...</p>
+    <div class="workspace">
+      <!-- Left Column: Inputs & Telemetry -->
+      <div>
+        <!-- Application Context -->
+        <div class="box">
+          <p class="label-title">1. Application Context</p>
+          <div style="margin-bottom: 10px;">
+            <label for="app-name-input">Application Name</label>
+            <input type="text" id="app-name-input" placeholder="e.g. Safari, Figma, Slack, Finder">
+          </div>
+          <div>
+            <label>Application Type</label>
+            <div class="radio-grid">
+              <label class="radio-btn">
+                <input type="radio" name="app-type" value="3rd_party" checked>
+                <span>3rd-Party App</span>
+              </label>
+              <label class="radio-btn">
+                <input type="radio" name="app-type" value="native_mac">
+                <span>Native macOS App</span>
+              </label>
             </div>
           </div>
-          <input type="checkbox" id="use-telemetry-toggle" checked class="h-4 w-4 text-indigo-600 rounded border-slate-300">
         </div>
 
-        <!-- Screenshot Upload Dropzone -->
-        <div class="p-6 bg-white rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition cursor-pointer text-center" id="dropzone">
-          <input type="file" id="file-input" accept="image/*" class="hidden">
-          <div class="space-y-2">
-            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i>
-            <p class="text-sm font-medium text-slate-700">Drag & drop error screenshot, or <span class="text-indigo-600">browse</span></p>
-            <p class="text-xs text-slate-400">Retina screenshots downscaled automatically to 1280px</p>
+        <!-- Telemetry Ingestion -->
+        <div class="box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <p class="label-title" style="margin: 0;">2. macOS Telemetry Logs</p>
+              <p id="telemetry-status" style="font-size: 12px; color: #475569; margin-top: 4px;">Checking ~/Library/Logs/DiagnosticReports...</p>
+            </div>
+            <input type="checkbox" id="use-telemetry-toggle" checked style="width: 18px; height: 18px; cursor: pointer;">
           </div>
-          <div id="preview-container" class="mt-4 hidden">
-            <img id="image-preview" class="max-h-48 mx-auto rounded-lg border border-slate-200 shadow-sm" src="#" alt="Preview">
+        </div>
+
+        <!-- Visual Screenshot Upload: Native + Drag & Drop + Paste -->
+        <div class="dropzone-container" id="dropzone-box">
+          <p style="font-size: 13px; font-weight: 600; color: #334155;">Upload Screenshot / Evidence</p>
+          <p style="font-size: 11px; color: #64748b; margin-top: 2px;">Use the button below, drag & drop here, or press <b>Cmd + V</b> anywhere</p>
+          
+          <!-- Native Visible File Picker Button -->
+          <div style="margin-top: 10px;">
+            <input type="file" id="file-input" accept="image/*" class="file-input-control">
+          </div>
+
+          <div id="preview-container" class="hidden">
+            <img id="image-preview" src="" alt="Screenshot Preview">
+            <p id="file-name-label" style="font-size: 11px; color: #15803d; font-weight: 600; margin-top: 4px;"></p>
           </div>
         </div>
 
         <!-- Privacy Selection -->
-        <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Privacy & Consent Gate</p>
-          <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col p-3 border border-indigo-200 bg-indigo-50/50 rounded-lg cursor-pointer">
-              <div class="flex items-center gap-2">
-                <input type="radio" name="privacy-choice" value="full" checked class="text-indigo-600">
-                <span class="text-xs font-medium text-slate-800">Attach Screenshot</span>
-              </div>
-              <span class="text-[11px] text-slate-500 mt-1">Include image in diagnostic payload</span>
+        <div class="box">
+          <p class="label-title">3. Privacy Gate</p>
+          <div class="radio-grid">
+            <label class="radio-btn">
+              <input type="radio" name="privacy-choice" value="full" checked>
+              <span>Attach Screenshot</span>
             </label>
-            <label class="flex flex-col p-3 border border-slate-200 bg-white rounded-lg cursor-pointer">
-              <div class="flex items-center gap-2">
-                <input type="radio" name="privacy-choice" value="text" class="text-indigo-600">
-                <span class="text-xs font-medium text-slate-800">Text-Only Fallback</span>
-              </div>
-              <span class="text-[11px] text-slate-500 mt-1">Discard screenshot; send telemetry only</span>
+            <label class="radio-btn">
+              <input type="radio" name="privacy-choice" value="text">
+              <span>Text Telemetry Only</span>
             </label>
           </div>
         </div>
 
-        <button id="analyze-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Synthesize Bug Report
-        </button>
-      </section>
+        <button id="analyze-btn" class="btn-action btn-purple">Synthesize Bug Report</button>
+      </div>
 
-      <!-- Right Panel: Review & Dispatch -->
-      <section class="space-y-6">
-        <div class="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Structured Report Review</p>
-            <span id="analysis-badge" class="hidden px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded">Verified</span>
+      <!-- Right Column: Verification & Dispatch -->
+      <div>
+        <div class="box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <p class="label-title" style="margin: 0;">4. Report Review</p>
+            <span id="analysis-badge" class="status-pill hidden" style="padding: 2px 8px; font-size: 10px;">Verified</span>
           </div>
+
+          <div style="margin-bottom: 10px;">
+            <label for="report-title">Issue Title</label>
+            <input type="text" id="report-title" placeholder="Awaiting synthesis...">
+          </div>
+
           <div>
-            <label class="text-xs text-slate-500">Issue Title</label>
-            <input type="text" id="report-title" class="w-full mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            <label for="report-markdown">Report Content (Markdown)</label>
+            <textarea id="report-markdown" placeholder="Generated bug report will appear here..."></textarea>
           </div>
+        </div>
+
+        <div class="box">
+          <p class="label-title">5. Dispatch Target</p>
+          <div class="radio-grid" style="margin-bottom: 10px;">
+            <label class="radio-btn">
+              <input type="radio" name="channel" value="github" checked>
+              <span>GitHub API</span>
+            </label>
+            <label class="radio-btn">
+              <input type="radio" name="channel" value="browser">
+              <span>Web Portal Autofill</span>
+            </label>
+          </div>
+
           <div>
-            <label class="text-xs text-slate-500">Report Body (Markdown)</label>
-            <textarea id="report-markdown" rows="8" class="w-full mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+            <label for="target-destination">Target Repository or Support URL</label>
+            <input type="text" id="target-destination" value="AtharvVhanalkar/snapticket-agent">
           </div>
+
+          <button id="dispatch-btn" class="btn-action btn-dark">Dispatch Issue</button>
         </div>
-
-        <!-- Destination Dock -->
-        <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Dispatch Channel</p>
-          <div class="flex gap-4">
-            <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-              <input type="radio" name="channel" value="github" checked class="text-indigo-600"> GitHub API
-            </label>
-            <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-              <input type="radio" name="channel" value="browser" class="text-indigo-600"> Web Portal Autofill
-            </label>
-          </div>
-          <input type="text" id="target-destination" value="AtharvVhanalkar/bug-inbox" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
-        </div>
-
-        <button id="dispatch-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium shadow-sm transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-paper-plane"></i> Dispatch Issue
-        </button>
-      </section>
-
+      </div>
     </div>
   </div>
 
