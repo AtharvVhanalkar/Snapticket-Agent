@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SnapTicket Agent — Autonomous Triage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+  <div class="max-w-5xl mx-auto py-10 px-6">
+    
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">SnapTicket Agent</h1>
+        <p class="text-sm text-slate-500">Autonomous Bug & Incident Triage Engine</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <i class="fa-solid fa-microchip"></i> Gemma 4 Active
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- Left Panel: Ingestion & Consent -->
+      <section class="space-y-6">
+        
+        <!-- Telemetry Detection Card -->
+        <div id="telemetry-card" class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="telemetry-icon" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">macOS Telemetry</p>
+              <p id="telemetry-status" class="text-sm font-medium text-slate-700">Checking for recent .ips incident logs...</p>
+            </div>
+          </div>
+          <input type="checkbox" id="use-telemetry-toggle" checked class="h-4 w-4 text-indigo-600 rounded border-slate-300">
+        </div>
+
+        <!-- Screenshot Upload Dropzone -->
+        <div class="p-6 bg-white rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition cursor-pointer text-center" id="dropzone">
+          <input type="file" id="file-input" accept="image/*" class="hidden">
+          <div class="space-y-2">
+            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i>
+            <p class="text-sm font-medium text-slate-700">Drag & drop error screenshot, or <span class="text-indigo-600">browse</span></p>
+            <p class="text-xs text-slate-400">Retina screenshots downscaled automatically to 1280px</p>
+          </div>
+          <div id="preview-container" class="mt-4 hidden">
+            <img id="image-preview" class="max-h-48 mx-auto rounded-lg border border-slate-200 shadow-sm" src="#" alt="Preview">
+          </div>
+        </div>
+
+        <!-- Privacy Selection -->
+        <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Privacy & Consent Gate</p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col p-3 border border-indigo-200 bg-indigo-50/50 rounded-lg cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="privacy-choice" value="full" checked class="text-indigo-600">
+                <span class="text-xs font-medium text-slate-800">Attach Screenshot</span>
+              </div>
+              <span class="text-[11px] text-slate-500 mt-1">Include image in diagnostic payload</span>
+            </label>
+            <label class="flex flex-col p-3 border border-slate-200 bg-white rounded-lg cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="privacy-choice" value="text" class="text-indigo-600">
+                <span class="text-xs font-medium text-slate-800">Text-Only Fallback</span>
+              </div>
+              <span class="text-[11px] text-slate-500 mt-1">Discard screenshot; send telemetry only</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="analyze-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Synthesize Bug Report
+        </button>
+      </section>
+
+      <!-- Right Panel: Review & Dispatch -->
+      <section class="space-y-6">
+        <div class="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Structured Report Review</p>
+            <span id="analysis-badge" class="hidden px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded">Verified</span>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Issue Title</label>
+            <input type="text" id="report-title" class="w-full mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Report Body (Markdown)</label>
+            <textarea id="report-markdown" rows="8" class="w-full mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+          </div>
+        </div>
+
+        <!-- Destination Dock -->
+        <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Dispatch Channel</p>
+          <div class="flex gap-4">
+            <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <input type="radio" name="channel" value="github" checked class="text-indigo-600"> GitHub API
+            </label>
+            <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <input type="radio" name="channel" value="browser" class="text-indigo-600"> Web Portal Autofill
+            </label>
+          </div>
+          <input type="text" id="target-destination" value="AtharvVhanalkar/bug-inbox" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+        </div>
+
+        <button id="dispatch-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium shadow-sm transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Dispatch Issue
+        </button>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
